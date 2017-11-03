@@ -30,6 +30,8 @@
 #include "esp_attr.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
+#include "soc/soc.h"
+#include "soc/rtc.h"
 #include "esp_clk.h"
 #include "cache_utils.h"
 
