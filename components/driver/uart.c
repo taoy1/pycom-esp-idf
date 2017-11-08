@@ -18,6 +18,8 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "soc/soc.h"
+#include "soc/rtc.h"
 #include "esp_clk.h"
 #include "malloc.h"
 #include "freertos/FreeRTOS.h"
@@ -533,6 +535,8 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
     return ESP_OK;
 }
 
+static uart_rx_callback_t uart_rx_callback = NULL;
+
 //internal isr handler for default driver code.
 static void uart_rx_intr_handler_default(void *param)
 {
@@ -659,7 +663,11 @@ static void uart_rx_intr_handler_default(void *param)
                 p_uart->rx_stash_len = rx_fifo_len;
                 //We have to read out all data in RX FIFO to clear the interrupt signal
                 while(buf_idx < rx_fifo_len) {
-                    p_uart->rx_data_buf[buf_idx++] = uart_reg->fifo.rw_byte;
+                    uint8_t rx_data = uart_reg->fifo.rw_byte;
+                    p_uart->rx_data_buf[buf_idx++] = rx_data;
+                    if (uart_rx_callback) {
+                        uart_rx_callback(uart_num, rx_data);
+                    }
                 }
                 //After Copying the Data From FIFO ,Clear intr_status
                 UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
@@ -1015,7 +1023,7 @@ esp_err_t uart_flush(uart_port_t uart_num)
     return ESP_OK;
 }
 
-esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t *uart_queue, int intr_alloc_flags)
+esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t *uart_queue, int intr_alloc_flags, uart_rx_callback_t rx_callback)
 {
     esp_err_t r;
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
@@ -1070,6 +1078,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         return ESP_FAIL;
     }
 
+    uart_rx_callback = rx_callback;
     r=uart_isr_register(uart_num, uart_rx_intr_handler_default, p_uart_obj[uart_num], intr_alloc_flags, &p_uart_obj[uart_num]->intr_handle);
     if (r!=ESP_OK) goto err;
     uart_intr_config_t uart_intr = {

@@ -120,3 +120,7 @@ void app_main()
 
     wifi_scan();
 }
+
+void vPortCleanUpTCB (void *tcb) {
+
+}

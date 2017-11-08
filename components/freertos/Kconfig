@@ -255,7 +255,7 @@ config TIMER_TASK_PRIORITY
 config TIMER_TASK_STACK_DEPTH
     int "FreeRTOS timer task stack size"
     range 1536 32768
-    default 2048
+    default 1536
     help
         The timer service task (primarily) makes use of existing FreeRTOS features, allowing timer
         functionality to be added to an application with minimal impact on the size of the application's
