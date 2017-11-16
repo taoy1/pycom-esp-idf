@@ -20,6 +20,7 @@ GPATH
 
 # Example project files
 examples/**/sdkconfig
+!examples/get-started/hello_world/sdkconfig
 examples/**/sdkconfig.old
 examples/**/build
 
