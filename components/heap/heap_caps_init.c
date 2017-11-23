@@ -226,7 +226,7 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
 esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, intptr_t end)
 {
     esp_err_t err = ESP_FAIL;
-    if (caps == NULL || start == 0 || end == 0 || end < start) {
+    if (caps == NULL || start == 0 || end == 0 || end <= start) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -234,8 +234,10 @@ esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, 
     //region is invalid (or maybe added twice)
     heap_t *heap;
     SLIST_FOREACH(heap, &registered_heaps, next) {
-        if ( start <= heap->start &&  heap->start <=end ) return ESP_FAIL;
-        if ( start <= heap->end &&  heap->end <=end ) return ESP_FAIL;
+        if ((start <= heap->start && end > heap->start)
+                || (start < heap->end && end > heap->end)) {
+            return ESP_FAIL;
+        }
     }
 
     heap_t *p_new = malloc(sizeof(heap_t));
